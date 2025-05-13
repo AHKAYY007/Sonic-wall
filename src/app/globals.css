@@ -31,3 +31,23 @@ body {
 .transition-class{
   transition: all .4s ease;
 }
+/* Scrollbar for Webkit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 8px; /* Adjust scrollbar width */
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1F29; /* Dark background */
+  border-radius: 8px; /* Rounded track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #344A62; /* Slightly lighter blue for contrast */
+  border-radius: 8px; /* Rounded thumb */
+  border: 2px solid #1A1F29; /* Adds a smooth separation */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3E5C76; /* Hover effect for smooth UX */
+}

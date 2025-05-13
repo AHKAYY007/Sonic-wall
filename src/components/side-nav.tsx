@@ -15,7 +15,7 @@ function SideNav() {
     ];
 
     return (
-      <div className="flex flex-col justify-start items-start p-4 bg-[#061224] w-[20vw] min-w-60">
+      <div className="flex flex-col justify-start sticky top-0 items-start p-4 bg-[#061224] w-[20vw] min-w-60">
         <h1 className="flex justify-start items-center gap-3 font-bold text-2xl">
           <span className="relative h-14 w-14 rounded-2xl overflow-hidden">
             <Image
