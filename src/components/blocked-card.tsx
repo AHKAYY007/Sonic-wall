@@ -4,7 +4,7 @@ export default function BlockedCard() {
     const blockedAddresses = ["0x9b1..d02a", "0x9b1..d02b"];
     return (
       <>
-        <div className="w-full gap-4 text-white border border-gray-700 rounded-lg p-4">
+        <div className="w-full gap-4 text-white border border-gray-700 rounded-lg px-2 sm:px-4 py-4">
           <h2 className="text-lg font-medium mb-4 text-left">
             Blocked Addresses
           </h2>
@@ -21,11 +21,16 @@ export default function BlockedCard() {
               </div>
             ))}
           </div>
-            </div>
-            <div className="w-full gap-4 text-white border border-gray-700 rounded-lg p-4">
-                <input type="text" placeholder="Add address" name="" id="add" />
-                <label htmlFor="add"></label>
-            </div>
+        </div>
+        <div className="w-full gap-3 text-white border border-gray-700 rounded-lg px-4 py-2 flex justify-between ">
+          <input type="text" placeholder="Add address" name="" id="add" className="flex w-full"/>
+          <label
+            htmlFor="add"
+            className="cursor-pointer transition-class bg-[#2C3440] sm:px-3 px-4 py-2 rounded-lg hover:bg-[#374458] transition-class mr-2 flex"
+          >
+            Block
+          </label>
+        </div>
       </>
     );
 }
