@@ -22,7 +22,12 @@ export default function Home() {
           <Heading />
           <div className="flex gap-3 justify-start items-center w-full flex-wrap lg:flex-nowrap">
             {data.map((data, index) => (
-              <FlexCard title={data.title} unit={data.unit} value={data.value} key={index} />
+              <FlexCard
+                title={data.title}
+                unit={data.unit}
+                value={data.value}
+                key={index}
+              />
             ))}
           </div>
           <div className="flex gap-4 w-full lg:flex-nowrap flex-wrap  justify-between items-start">
@@ -31,7 +36,7 @@ export default function Home() {
               {/* integration wizard */}
               <IntegrationCard />
             </div>
-            <div className="flex w-full lg:w-[40%] flex-col justify-start items-start gap-4">
+            <div className="flex w-full lg:w-[40%] flex-col justify-start items-start gap-4 max-lg:mb-18">
               <BlockedCard />
               <GetStarted />
             </div>
