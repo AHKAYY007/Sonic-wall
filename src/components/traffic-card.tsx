@@ -8,7 +8,7 @@ export default function TrafficCard() {
         {time:"2:45 PM", sender:"0x9b1..d02a", address:"0x5fc...ef91", method:"transfer"},
     ]
     return (
-      <div className="max-w-lg bg-[#1A1F29] text-white border border-gray-700 rounded-lg p-4">
+      <div className="w-full bg-[#161a23] text-white border border-gray-700 rounded-lg p-4">
         <h2 className="text-lg font-semibold mb-4 text-left">
           Contract Traffic
         </h2>
@@ -25,7 +25,7 @@ export default function TrafficCard() {
             </thead>
             <tbody className="">
               {transactions.map((transaction, index) => (
-                <tr key={index} className="hover:bg-[#282f3a] odd:bg-[#2C3440] cursor-pointer">
+                <tr key={index} className="hover:bg-[#232932] odd:bg-[#2c3440b5] cursor-default opacity-90">
                   <td className="py-2 px-4">{transaction.time}</td>
                   <td className="py-2 px-4">{transaction.sender}</td>
                   <td className="py-2 px-4">{transaction.address}</td>
