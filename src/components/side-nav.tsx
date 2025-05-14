@@ -89,7 +89,7 @@ function SideNav() {
               className={`text-xs flex flex-col justify-center items-center opacity-90 py-2 px-1 transition-class hover:text-[#4DA8DA] hover:bg-[#4da9da15] sm:px-4 gap-3 font-medium w-full rounded-lg ${
                 link.href === pathName
                   ? " text-[#4DA8DA] bg-[#4da9da15]"
-                  : "text-[#ffffff92]"
+                  : "text-[#ffffffa5]"
               }`}
             >
               <span className="relative h-6 w-6 flex justify-center items-center">
