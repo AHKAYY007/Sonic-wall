@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+web3
+python-dotenv
+eth-utils
+prometheus-client
+sentry-sdk
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-otlp
+
+pytest
+httpx
+ruff
+black
