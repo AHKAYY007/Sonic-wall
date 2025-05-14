@@ -95,7 +95,7 @@ function SideNav() {
               <span className="relative h-6 w-6 flex justify-center items-center">
                 <Image
                   alt={link.title}
-                  src={`${link.href === pathName ? link.active : link.icon}`}
+                  src={link.active}
                   layout="fill"
                   objectFit="contain"
                   objectPosition="center"

@@ -18,7 +18,7 @@ function Heading() {
           </h1>
           <h2 className="text-lg font-semibold max-lg:hidden">Dashboard</h2>
         </div>
-        <button className="p-3 rounded-lg border border-gray-600 hover:opacity-80 cursor-pointer">
+        <button className="sm:p-3 px-3 py-2 text-base sm:text-lg rounded-lg border border-gray-600 hover:opacity-80 cursor-pointer">
           {" "}
           Connect Wallet
         </button>
