@@ -6,7 +6,7 @@ from app.api.schemas import (
     BatchTxCheckResponse,
     BatchTxCheckResponseItem,
 )
-from app.firewall.rules import is_address_blocked
+from app.firewall.rules import is_address_blocked, get_risk_score
 import logging
 from opentelemetry import trace
 
@@ -35,7 +35,6 @@ async def check_tx(payload: TxCheckRequest, request: Request):
                     "path": request.url.path
                 }
             )
-
             return TxCheckResponse(
                 to=payload.to,
                 blocked=blocked,
@@ -81,3 +80,16 @@ async def batch_check(payload: BatchTxCheckRequest, request: Request):
         except Exception as e:
             logger.exception("Batch blockchain interaction failed")
             raise HTTPException(status_code=502, detail="Batch blockchain interaction failed")
+
+
+@router.get("/risk-score/{wallet_address}", tags=["Firewall"])
+async def risk_score(wallet_address: str):
+    return await get_risk_score(wallet_address)
+
+
+@router.get("/firewall-check/{wallet_address}", tags=["Firewall"])
+def firewall_check(wallet_address: str):
+    try:
+        return {"blocked": is_address_blocked(wallet_address)}
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid address")
