@@ -1,96 +1,65 @@
-import os
-import logging
-from logging.handlers import RotatingFileHandler
-
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Depends, WebSocket
+from sqlalchemy.orm import Session
+from . import model, schemas, database, crud, websocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
 
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Summary
-import sentry_sdk
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+model.Base.metadata.create_all(bind=database.engine)
+app = FastAPI()
 
-from app.api.routes import router as api_router
+def get_db():
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# ---------------------------
-# Setup Logging
-# ---------------------------
-LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)
 
-log_file_path = os.path.join(LOG_DIR, "app.log")
-handler = RotatingFileHandler(log_file_path, maxBytes=5*1024*1024, backupCount=5)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[handler]
-)
-logger = logging.getLogger(__name__)
-
-# ---------------------------
-# Sentry Setup
-# ---------------------------
-sentry_sdk.init(
-    dsn=os.getenv("SENTRY_DSN"),
-    traces_sample_rate=1.0,
-    environment=os.getenv("ENVIRONMENT", "development")
-)
-
-# ---------------------------
-# OpenTelemetry Setup
-# ---------------------------
-resource = Resource(attributes={
-    SERVICE_NAME: "sonic-wallet-firewall"
-})
-
-provider = TracerProvider(resource=resource)
-processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318/v1/traces")))
-provider.add_span_processor(processor)
-
-# Set global provider
-from opentelemetry import trace
-trace.set_tracer_provider(provider)
-
-# ---------------------------
-# FastAPI App Setup
-# ---------------------------
-app = FastAPI(title="Sonic Wallet Firewall")
-
-# Middleware: CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Middleware: Prometheus
-REQUEST_COUNT = Counter("api_requests_total", "Total API requests", ["method", "endpoint"])
-REQUEST_LATENCY = Summary("api_request_duration_seconds", "API request latency")
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
 
-@app.middleware("http")
-async def prometheus_metrics(request: Request, call_next):
-    REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path).inc()
-    with REQUEST_LATENCY.time():
-        response = await call_next(request)
-    return response
+@app.get("/api/stats")
+def get_stats(db: Session = Depends(get_db)):
+    return crud.get_stats(db)
 
-@app.get("/metrics", include_in_schema=False)
-async def metrics():
-    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+@app.get("/api/traffic")
+def get_traffic(db: Session = Depends(get_db)):
+    return crud.get_traffic(db)
 
-# Health check endpoint
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {"status": "ok"}
+@app.post("/api/traffic")
+async def add_call(call: schemas.ContractCallCreate, db: Session = Depends(get_db)):
+    new_call = crud.create_call(db, call)
+    await websocket.manager.broadcast({
+        "event": "new_call",
+        "data": schemas.ContractCallOut.from_orm(new_call).dict()
+    })
+    return new_call
 
-# Include API routes
-app.include_router(api_router, prefix="/api")
+@app.get("/api/blocked")
+def get_blocked(db: Session = Depends(get_db)):
+    return crud.get_blocked(db)
 
-# Instrument OpenTelemetry
-FastAPIInstrumentor.instrument_app(app)
+@app.post("/api/blocked")
+def block_address(addr: schemas.BlockedAddressBase, db: Session = Depends(get_db)):
+    return crud.block_address(db, addr.address)
+
+@app.delete("/api/blocked/{addr}")
+def unblock(addr: str, db: Session = Depends(get_db)):
+    return crud.unblock_address(db, addr)
+
+@app.websocket("/ws/traffic")
+async def traffic_ws(ws: WebSocket):
+    await websocket.manager.connect(ws)
+    try:
+        while True:
+            await ws.receive_text()  # keep alive
+    except:
+        websocket.manager.disconnect(ws)
