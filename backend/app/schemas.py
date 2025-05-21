@@ -1,24 +1,32 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from typing import Optional
 from datetime import datetime
 
-# Input schema for creating contract calls
+# ---------- Contract Call ----------
+
 class ContractCallCreate(BaseModel):
-    sender: str
-    address: str
+    from_address: str
+    to_address: str
     method: str
 
-# Output schema
-class ContractCallOut(ContractCallCreate):
-    timestamp: datetime
-    class Config:
-        orm_mode = True
+class ContractCallOut(BaseModel):
+    id: int
+    from_address: str
+    to_address: str
+    method: str
+    call_time: datetime
+    confirmed_at: Optional[datetime]
 
-# Blocked address input
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ---------- Blocked Address ----------
+
 class BlockedAddressBase(BaseModel):
     address: str
 
-# Output
-class BlockedAddressOut(BlockedAddressBase):
+class BlockedAddressOut(BaseModel):
     id: int
-    class Config:
-        orm_mode = True
+    address: str
+
+    model_config = ConfigDict(from_attributes=True)
