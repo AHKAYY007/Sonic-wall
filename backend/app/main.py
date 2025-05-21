@@ -30,6 +30,10 @@ async def root():
 def get_stats(db: Session = Depends(get_db)):
     return crud.get_stats(db)
 
+@app.get("/api/stats/latency")
+def average_latency(db: Session = Depends(get_db)):
+    return crud.get_average_latency(db)
+
 @app.get("/api/traffic")
 def get_traffic(db: Session = Depends(get_db)):
     return crud.get_traffic(db)
