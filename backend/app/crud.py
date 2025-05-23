@@ -2,6 +2,11 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from . import model, schemas
+import requests
+
+# ---------- Config ----------
+SONICSCAN_API_KEY = "EE19MS8ZX5XJRVCBQR5RJT1QEQR3CUV7KM"
+SONICSCAN_API_URL = "https://api.sonicscan.org/api"
 
 # ---------- Stats ----------
 
@@ -91,6 +96,22 @@ def block_address(db: Session, address: str):
     return {"message": "Address already blocked"}
 
 
+def get_blocked_address(db: Session, addr: str):
+    """
+    Retrieve a blocked address by its address.
+    """
+    obj = db.query(model.BlockedAddress).filter_by(address=addr).first()
+    return obj if obj else {"message": "Address not found"}
+
+
+def is_blocked(db: Session, addr: str):
+    """
+    Check if an address is blocked.
+    """
+    obj = db.query(model.BlockedAddress).filter_by(address=addr).first()
+    return {"blocked": bool(obj)}
+
+
 def unblock_address(db: Session, addr: str):
     """
     Unblock an address if it exists.
@@ -101,3 +122,81 @@ def unblock_address(db: Session, addr: str):
         db.commit()
         return {"unblocked": addr}
     return {"message": "Address not found"}
+
+# ---------- Wallet: Local ----------
+
+def get_wallet_history(db: Session, address: str, limit: int = 20):
+    """
+    Retrieve recent contract calls involving the given wallet address (from or to).
+    """
+    return (
+        db.query(model.ContractCall)
+        .filter(
+            (model.ContractCall.from_address == address) |
+            (model.ContractCall.to_address == address)
+        )
+        .order_by(model.ContractCall.call_time.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def get_wallet_transactions(db: Session, address: str):
+    """
+    Retrieve all transactions sent from a given wallet address.
+    """
+    return (
+        db.query(model.ContractCall)
+        .filter_by(from_address=address)
+        .order_by(model.ContractCall.call_time.desc())
+        .all()
+    )
+
+# ---------- Wallet: SonicScan Integration ----------
+
+def fetch_wallet_transactions(wallet_address: str) -> list:
+    """
+    Fetch transactions for a given wallet address from SonicScan.
+    """
+    params = {
+        "module": "account",
+        "action": "txlist",
+        "address": wallet_address,
+        "startblock": 0,
+        "endblock": 99999999,
+        "sort": "desc",
+        "apikey": SONICSCAN_API_KEY
+    }
+    response = requests.get(SONICSCAN_API_URL, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data.get("status") == "1":
+            return data.get("result", [])
+    return []
+
+
+def sync_wallet_transactions(db: Session, wallet_address: str):
+    """
+    Sync transactions from SonicScan to the local database.
+    """
+    transactions = fetch_wallet_transactions(wallet_address)
+
+    for tx in transactions:
+        call_time = datetime.fromtimestamp(int(tx["timeStamp"]))
+        exists = db.query(model.ContractCall).filter_by(
+            from_address=tx["from"],
+            to_address=tx["to"],
+            call_time=call_time
+        ).first()
+
+        if not exists:
+            new_call = model.ContractCall(
+                from_address=tx["from"],
+                to_address=tx["to"],
+                method=tx.get("functionName", "unknown"),
+                call_time=call_time,
+                confirmed_at=call_time if tx.get("timeStamp") else None
+            )
+            db.add(new_call)
+
+    db.commit()
